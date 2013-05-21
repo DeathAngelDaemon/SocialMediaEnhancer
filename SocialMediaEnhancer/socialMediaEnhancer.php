@@ -37,7 +37,7 @@ function smeAutoload($class) {
 
 
 
-
+/*
 
 add_action('init', array('SocialMediaEnhancer', 'init'));
 
@@ -500,4 +500,6 @@ class SocialMediaEnhancer {
 }
 
 #SocialMediaEnhancer::init();
+
+	*/
 
