@@ -1,18 +1,48 @@
 <?php
-/*
-Plugin Name: SocialMediaEnhancer
-Plugin URI: https://github.com/macx/SocialMediaEnhancer
-Description: Smart social button integration and counter
-Version: 1.7.2
-Update: 2013-05-18
-Author: David Maciejewski
-Author URI: http://macx.de/+
-*/
+/**
+ * Plugin Name:		SocialMediaEnhancer
+ * Plugin URI:		https://github.com/macx/SocialMediaEnhancer
+ * Description:		Fetches share and like counts from the social networks, display javascript-free share buttons and enhance meta tags for optimal sharing
+ * Author:			David Maciejewski
+ * Version:			2.0b
+ * Author URI:		http://macx.de
+ *
+ * Text Domain:		socialmediaenhancer
+ * Domain Path:		/socialmediaenhancer/
+ */
+
+if(!class_exists('WP')) {
+	die();
+}
+
+define('OPTIMUS_FILE', __FILE__);
+define('OPTIMUS_BASE', plugin_basename(__FILE__));
+
+
+
+#echo OPTIMUS_FILE . '<br>';
+#echo OPTIMUS_BASE . '<br>';
+
+/* init autoloader */
+spl_autoload_register('smeAutoload');
+
+function smeAutoload($class) {
+	if(in_array($class, array('sme', 'smeSettings'))) {
+		require_once(sprintf('%s/assets/%s.class.php', dirname(__FILE__), strtolower($class)));
+	}
+}
+
+
+
+
+
+
+
 
 add_action('init', array('SocialMediaEnhancer', 'init'));
 
 class SocialMediaEnhancer {
-	protected $pluginPath;
+	protected $pluginPathName;
 
 	protected $pluginUrl;
 
@@ -24,12 +54,14 @@ class SocialMediaEnhancer {
 		global $wpdb;
 
 		$this->wpdb             = &$wpdb;
-		$this->pluginPath       = dirname(__FILE__);
 		$this->pluginBaseName   = plugin_basename(__FILE__);
 		$this->pluginBaseFolder = plugin_basename(dirname(__FILE__));
-		$this->pluginFileName   = str_replace($this->pluginBaseFolder . '/', '', $this->pluginBaseName);
 
+		$this->pluginFullPath = dirname(__FILE__);
 		$this->pluginPathName = basename(__DIR__);
+		$this->pluginPathFile = str_replace($this->pluginBaseFolder . '/', '', $this->pluginBaseName);
+		$this->pluginPath     = $this->pluginPathName . '/' . $this->pluginPathFile;
+
 		$this->pluginUrl      = plugins_url() . '/' . $this->pluginPathName;
 
 		// add theme support and  thumbs
@@ -39,7 +71,7 @@ class SocialMediaEnhancer {
 
 		// set meta data
 		add_filter('the_content', array(&$this, 'addSocialBar'));
-		add_filter('plugin_row_meta', array(&$this, 'smeOptionsLink'), 10, 2);
+		add_filter('plugin_row_meta', array(&$this, 'setPluginOptionLinks'), 10, 2);
 
 		add_action('init', array(&$this, 'smeInit'));
 		add_action('wp_head', array(&$this, 'setMetaData'));
@@ -434,20 +466,29 @@ class SocialMediaEnhancer {
 			wp_die(__('You do not have sufficient permissions to access this page.'));
 		}
 
-		include_once $this->pluginPath . '/templates/options.php';
+		include_once 'templates/options.php';
 	}
 
 	public function smeOptionsValidate($input) {
 		return $input;
 	}
 
-	public function smeOptionsLink($links, $file) {
-		if($file == $this->pluginBaseName) {
-			return array_merge(
-				$links,
-				array(sprintf('<a href="options-general.php?page=%s">%s</a>', $this->pluginBaseName, __('Settings')))
-			);
+	/**
+	 * Plugin Option Links at Manage Plugins page
+	 *
+	 * @param type $links
+	 * @param type $file
+	 * @return array $links
+	 */
+	public function setPluginOptionLinks($links, $file) {
+		if(strpos($file, $this->pluginPath) === false) {
+			return $links;
 		}
+
+		return array_merge(
+			$links,
+			array(sprintf('<a href="options-general.php?page=%s">%s</a>', $this->pluginBaseName, __('Settings')))
+		);
 
 		return $links;
 	}
